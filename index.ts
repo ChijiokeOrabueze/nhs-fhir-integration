@@ -3,7 +3,9 @@ import fs from "fs";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import axios from 'axios';
+import Client from 'fhir-kit-client'
 
+const client = new Client({ baseUrl: 'https://int.api.service.nhs.uk/' })
 
 const env = process.env.NODE_ENV;
 
@@ -24,9 +26,9 @@ const generateAndSignJwt = () => {
     const token = jwt.sign({ 
         "iss": apiKey,
         "sub": apiKey,
-        "aud": "https://api.service.nhs.uk/oauth2/token",
+        "aud": "https://int.api.service.nhs.uk/oauth2/token",
         "jti": crypto.randomUUID(),
-        "exp": (Date.now()/100) + 300,
+        "exp": (Date.now()/1000) + 300,
           
      }, privateKey, { algorithm: 'RS512', header: {kid: "test-1", alg: 'RS512', typ: "JWT"} });
 
@@ -53,7 +55,8 @@ const getAccessToken = async () => {
             },
             data: new URLSearchParams(data as Record<string, string>)
         });
-        return token;
+        console.log(token.data);
+        return token.data.access_token;
 
     } catch (error: any) {
         console.log({ tokenExchangeError: error?.response?.data || error });
@@ -64,8 +67,23 @@ const getAccessToken = async () => {
 
 
 }
-app.get("/", (req, res) => {
-    console.log("hi")
+app.get("/", async (req, res) => {
+
+    try {
+        const bearerToken = await getAccessToken()
+        const headers:Record<string, string> = {
+            "Authorization": `Bearer ${bearerToken}`
+        } 
+    
+        const result = await client
+        .request("https://sandbox.int.api.service.nhs.uk/hello-world/hello/application", {
+            method: "GET",
+            headers
+        })
+        res.json({result})
+    }catch (err){
+        res.send({error: err});
+    }
 })
 
 
