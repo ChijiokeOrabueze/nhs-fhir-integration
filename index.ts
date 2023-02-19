@@ -30,7 +30,7 @@ const generateAndSignJwt = () => {
         "jti": crypto.randomUUID(),
         "exp": (Date.now()/1000) + 300,
           
-     }, privateKey, { algorithm: 'RS512', header: {kid: "test-1", alg: 'RS512', typ: "JWT"} });
+     }, privateKey, { algorithm: 'RS512', header: {kid: "test-1", alg: 'RS512'} });
 
     return token;
 };
@@ -59,6 +59,7 @@ const getAccessToken = async () => {
         return token.data.access_token;
 
     } catch (error: any) {
+        throw error;
         console.log({ tokenExchangeError: error?.response?.data || error });
     }
 
@@ -72,17 +73,29 @@ app.get("/", async (req, res) => {
     try {
         const bearerToken = await getAccessToken()
         const headers:Record<string, string> = {
-            "Authorization": `Bearer ${bearerToken}`
+            "apiKey": apiKey
+            // "Authorization": `Bearer ${bearerToken}`
         } 
+
+        const result = await axios({
+            url: "https://sandbox.api.service.nhs.uk/personal-demographics/FHIR/R4/Patient",
+            // url: "https://directory.spineservices.nhs.uk/STU3/Organization/002",
+            // url: "https://sandbox.api.service.nhs.uk/hello-world/hello/application",
+            method: 'GET',
+            headers,
+            // data: new URLSearchParams(data as Record<string, string>)
+        });
+        console.log(result.data);
+        // return token.data.access_token;
     
-        const result = await client
-        .request("https://sandbox.int.api.service.nhs.uk/hello-world/hello/application", {
-            method: "GET",
-            headers
-        })
-        res.json({result})
-    }catch (err){
-        res.send({error: err});
+        // const result = await client
+        // .request("https://sandbox.api.service.nhs.uk/hello-world/hello/application", {
+        //     method: "GET",
+        //     headers
+        // })
+        res.json({result: result.data})
+    }catch (err:any){
+        res.send({ apiCallError: err?.response?.data || err });
     }
 })
 
