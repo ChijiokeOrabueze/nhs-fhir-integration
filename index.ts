@@ -59,8 +59,9 @@ const getAccessToken = async () => {
         return token.data.access_token;
 
     } catch (error: any) {
-        throw error;
         console.log({ tokenExchangeError: error?.response?.data || error });
+        throw error;
+        
     }
 
 
@@ -73,12 +74,13 @@ app.get("/", async (req, res) => {
     try {
         const bearerToken = await getAccessToken()
         const headers:Record<string, string> = {
-            "apiKey": apiKey
-            // "Authorization": `Bearer ${bearerToken}`
+            // "apiKey": apiKey
+            "Authorization": `Bearer ${bearerToken}`
         } 
 
         const result = await axios({
-            url: "https://sandbox.api.service.nhs.uk/personal-demographics/FHIR/R4/Patient",
+            // url: "https://sandbox.api.service.nhs.uk/personal-demographics/FHIR/R4/Patient",
+            url: "https://directory.spineservices.nhs.uk/ORD/2-0-0/organisations?",
             // url: "https://directory.spineservices.nhs.uk/STU3/Organization/002",
             // url: "https://sandbox.api.service.nhs.uk/hello-world/hello/application",
             method: 'GET',
